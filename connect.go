@@ -25,9 +25,10 @@ func NewConnectCommand(cli *client, args []string) Command {
 
 func (c *connect) Exec() error {
 	cli := c.c
-	_, err := mqttConnect(cli.addr, cli.opt)
+	cc, err := mqttConnect(cli.addr, cli.opt)
 	if err != nil {
 		return err
 	}
+	cc.Disconnect(0)
 	return nil
 }

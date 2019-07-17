@@ -2,10 +2,7 @@ package mqtt
 
 import (
 	"flag"
-	"fmt"
 	"log"
-
-	MQTT "github.com/eclipse/paho.mqtt.golang"
 )
 
 type subscribe struct {
@@ -14,16 +11,16 @@ type subscribe struct {
 	topic string
 	qos   uint
 	idgen func() string
-	debug bool
+	unsub bool
 }
 
 func NewSubscribeCommand(cli *client, args []string) Command {
 	c := &subscribe{}
 	fs := flag.NewFlagSet("subscribe", flag.ExitOnError)
 	setOpt(fs, &cli.opt)
-	fs.StringVar(&c.topic, "topic", "fperf-topic", "Topic to subscribe")
-	fs.UintVar(&c.qos, "qos", 1, "QoS should be 0, 1, 2")
-	fs.BoolVar(&c.debug, "debug", false, "Print interactive information")
+	fs.StringVar(&c.topic, "topic", "/fperf/topic", "Topic to subscribe")
+	fs.UintVar(&c.qos, "qos", 1, "Qos should be 0, 1, 2")
+	fs.BoolVar(&c.unsub, "unsub", false, "Unsub after subscribe")
 	if err := fs.Parse(args[1:]); err != nil {
 		log.Fatal(err)
 	}
@@ -37,15 +34,16 @@ func (c *subscribe) Exec() error {
 	topic := c.topic
 	cli := c.cli
 
-	handler := func(client MQTT.Client, msg MQTT.Message) {
-		if c.debug {
-			fmt.Printf("recv msg = %s\n", string(msg.Payload()))
-		}
-	}
 	mq := cli.cli
 	idstr := c.idgen()
-	if token := mq.Subscribe(topic+"-"+idstr, byte(qos), handler); token.Wait() && token.Error() != nil {
+	if token := mq.Subscribe(topic+"/"+idstr, byte(qos), nil); token.Wait() && token.Error() != nil {
 		return token.Error()
+	}
+
+	if c.unsub {
+		if token := mq.Unsubscribe(topic + "/" + idstr); token.Wait() && token.Error() != nil {
+			return token.Error()
+		}
 	}
 	return nil
 }

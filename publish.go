@@ -13,17 +13,16 @@ type publish struct {
 	qos     uint
 	payload string
 	retain  bool
-	idgen   func() string
 }
 
 func NewPublishCommand(cli *client, args []string) Command {
 	c := &publish{}
 
 	fs := flag.NewFlagSet("publish", flag.ExitOnError)
-	fs.StringVar(&c.topic, "topic", "fperf-topic", "The topic prefix to publish")
-	fs.StringVar(&c.payload, "payload", "hello world", "What you want to publish")
-	fs.BoolVar(&c.retain, "retain", false, "Retain messgae")
-	fs.UintVar(&c.qos, "qos", 1, "QoS should be 0, 1, 2")
+	fs.StringVar(&c.topic, "topic", "/fperf/topic", "topic to publish")
+	fs.StringVar(&c.payload, "payload", "hello world", "what you want to publish")
+	fs.BoolVar(&c.retain, "retain", false, "retain messgae")
+	fs.UintVar(&c.qos, "qos", 1, "qos should be 0, 1, 2")
 
 	setOpt(fs, &cli.opt)
 
@@ -32,14 +31,13 @@ func NewPublishCommand(cli *client, args []string) Command {
 	}
 
 	c.cli = cli
-	c.idgen = idgenerator()
 	return c
 }
 
 func (c *publish) Exec() error {
 	qos := c.qos
 	payload := c.payload
-	topic := c.topic + "-" + c.idgen()
+	topic := c.topic
 	mq := c.cli.cli
 	retain := c.retain
 
